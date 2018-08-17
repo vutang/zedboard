@@ -1,0 +1,5 @@
+TYPE=linux-kernel
+COMPONENT_FILE=Makefile
+BUILD_FILE=Makefile get_initramfs_file defconfig.yaml
+BUILD_ALL=pre-build build post-build pre-install install
+BUILD_TARGET_IMPLEMENTED=config defconfig mergeconfig

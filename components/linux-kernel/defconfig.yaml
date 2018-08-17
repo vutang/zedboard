@@ -1,0 +1,7 @@
+subsystem_arch:
+    arm:
+        default_defconfig: xilinx_zynq_defconfig
+    microblaze:
+        default_defconfig: mmu_defconfig
+    aarch64:
+        default_defconfig: defconfig

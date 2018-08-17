@@ -1,0 +1,6 @@
+the_ROM_image:
+{
+	[bootloader]/home/vux/Workspace/zed/zPetalinux/images/linux/zynq_fsbl.elf
+	/home/vux/Workspace/zed/zPetalinux/subsystems/linux/hw-description/zedSys_bd_wrapper.bit
+	/home/vux/Workspace/zed/zPetalinux/images/linux/u-boot.elf
+}
