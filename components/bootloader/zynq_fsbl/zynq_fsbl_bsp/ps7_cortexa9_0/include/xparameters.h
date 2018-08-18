@@ -20,6 +20,17 @@
 
 /******************************************************************/
 
+/* Definitions for driver ZEDBOARDOLED */
+#define XPAR_ZEDBOARDOLED_NUM_INSTANCES 1
+
+/* Definitions for peripheral ZEDBOARDOLED_0 */
+#define XPAR_ZEDBOARDOLED_0_DEVICE_ID 0
+#define XPAR_ZEDBOARDOLED_0_S00_AXI_BASEADDR 0x43C00000
+#define XPAR_ZEDBOARDOLED_0_S00_AXI_HIGHADDR 0x43C0FFFF
+
+
+/******************************************************************/
+
 
 /* Definitions for peripheral PS7_DDR_0 */
 #define XPAR_PS7_DDR_0_S_AXI_BASEADDR 0x00100000

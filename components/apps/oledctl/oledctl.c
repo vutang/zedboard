@@ -91,71 +91,38 @@ static int int_seq [64];
 
 void clear(void) {
 	int i=0;
-	for (i=0; i<=63; i++)
-		int_seq[i] = 0x00000000;
 	for (i=0;i<=60; i=i+4)
-		set_core_value(OLED_BASE+(i), int_seq[i]);
-	for (i=0;i<=DELAY ;i++)
-		set_core_value(OLED_BASE+(64), 1);
-	for (i=0;i<=DELAY ;i++)
-		set_core_value(OLED_BASE+(64), 0);
+		set_core_value(OLED_BASE + i, 0x00000000);
+
+	set_core_value(OLED_BASE + 64, 1);
+	usleep(10000);
+	set_core_value(OLED_BASE + 64, 0);
+	usleep(10000);
 }
 
 int print_char( char char_seq , unsigned int page, unsigned int position) {
-	unsigned int i=0, offset, ascii_value, shifter;
+	unsigned int i = 0, ascii_value, shifter;
+
 	if (position > 15)		{
 		printf(" Wrong position, position should be between (0-15).\n");
 		return (0);
 	}
 
-	switch (page) {
-		case 0 :
-			offset=0;
-			break;
-		case 1 :
-			offset=16;
-			break;
-		case 2 :
-			offset=32;
-			break;
-		case 3 :
-			offset=48;
-			break;
-		default :
-			printf(" Wrong page, page should be between (0-3).\n");
-			return (0);
-			break;
-	}
+	if (page < 0 || page > 3)
+		return -1;
 
 	ascii_value= (int) char_seq;
-	switch (position%4) {
-		case 0 :
-			shifter=0;
-			break;
-		case 1 :
-			shifter=8;
-			break;
-		case 2 :
-			shifter=16;
-			break;
-		case 3 :
-			shifter=24;
-			break;
-		default :
-			shifter=0;
-			break;
-	}
+	ascii_value = ascii_value << ((position % 4) * 8);
+	int_seq[(position - (position % 4)) + 16 * page] |= ascii_value;
 
-	ascii_value = ascii_value << shifter;
-	int_seq[(position-(position%4))+offset] = int_seq[(position-(position%4))+offset] | ascii_value;
-
-	for (i=0; i<=60; i=i+4)
-		set_core_value(OLED_BASE+(i),int_seq[i]);
-	for (i=0;i<=DELAY ;i++)
-		set_core_value(OLED_BASE+(64), 1);
-	for (i=0;i<=DELAY ;i++)
-		set_core_value(OLED_BASE+(64), 0);
-	return (1);
+	for (i = 0; i <= 60; i = i+4)
+		set_core_value(OLED_BASE + i, int_seq[i]);
+	
+	set_core_value(OLED_BASE + 64, 1);
+	usleep(10000);
+	set_core_value(OLED_BASE + 64, 0);
+	usleep(10000);
+	return 1;
 }
 
 int print_message(char *start , unsigned int page) {
@@ -174,7 +141,7 @@ int print_message(char *start , unsigned int page) {
 int main() {
     printf("Hello World\n");
     clear();
-	print_message("Texas A&M Qatar",0);
-	print_message("ECEN Department",2);
+	print_message("OLED Demo",0);
+	print_message("Vu Tang - VTTEK",2);
     return 0;
 }
