@@ -1,0 +1,14 @@
+###############################################################################
+# Please modify this file if you want to configure your own application.
+# You can uncommon and/or change the following Kconfig elements.
+###############################################################################
+
+
+if ROOTFS_COMPONENT_APPS_NAME_LIGHT_SENSOR_CLI
+	comment "No additional options for LIGHT_SENSOR_CLI"
+
+# 	config APPS_LIGHT_SENSOR_CLI_OPTION0
+#	bool "option0"
+#	help
+#	  Help text
+endif

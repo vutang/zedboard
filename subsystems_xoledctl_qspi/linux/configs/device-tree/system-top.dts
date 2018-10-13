@@ -1,0 +1,14 @@
+/dts-v1/;
+/include/ "system-conf.dtsi"
+/ {
+};
+
+&qspi {
+	flash0: flash@0 {
+		compatible = "micron,n25q128a13";
+	};
+};
+
+&xadc_wiz_0 {
+	compatible = "xlnx,axi-xadc-1.00.a";
+};

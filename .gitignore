@@ -1,0 +1,10 @@
+build/
+images/
+subsystems/
+.petalinux/*
+!.petalinux/metadata
+*.o
+*.jou
+*.log
+hw-description
+components/bootloader/*
