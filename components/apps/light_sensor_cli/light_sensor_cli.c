@@ -39,9 +39,16 @@ typedef struct {
 	unsigned long end;
 } ls_timer_t;
 
+/*Report structure*/
+typedef struct str_sensor_data {
+	int si1145_ps1;
+	int si1145_als;
+	int si1152_uv;
+} str_sensor_data_t;
+
 pthread_t gtid_timer, gtid_hwmon; /*For timer thread*/
-int8_t gudpskt_test_flag = 0;
-char server_ip[INET_ADDRSTRLEN];
+int8_t gudpskt_test_flag = 0, g_serip_change = 0;
+char server_ip[INET_ADDRSTRLEN] = "192.168.120.100";
 
 ls_timer_t timer[TIMER_ID_MAX];
 str_sensor_data_t ghw_sensor_dat;
@@ -70,7 +77,7 @@ void timer_expired(int timerid) {
 			timer_start(1, TIMER_ID_SEND_TEST_ETH);
 			break;
 		case TIMER_ID_SEND_REPORT:
-			send_udp_hw_report(&ghw_sensor_dat);
+			send_udp_hw_report((char *) &ghw_sensor_dat, sizeof(str_sensor_data_t));
 			timer_start(1, TIMER_ID_SEND_REPORT);
 		default:
 			break;
@@ -105,10 +112,33 @@ void *timer_check(void *p) {
 void *hw_mon(void *p) {
 	int tmp = -1, ret;
 	while (1) {
-		ret = si1145_get_uvdata(&tmp);
-		if (!ret) {
-			ghw_sensor_dat.uv_data = tmp;
+		/*Force prox and als: as example code*/
+		ret = si1145_dev_write_byte(0x18, 0x05);
+		if (ret < 0) {
+			LOG_WARN("Force prox and als meas fail");
 		}
+
+		/*Read LSB of PS1*/
+		ret = si1145_get_ps1(&tmp);
+		if (!ret)
+			ghw_sensor_dat.si1145_ps1 = tmp;
+		else
+			ghw_sensor_dat.si1145_ps1 = -1;
+
+		/*Read ALS*/
+
+		ret = si1145_get_als(&tmp);
+		if (!ret)
+			ghw_sensor_dat.si1145_als = tmp;
+		else
+			ghw_sensor_dat.si1145_als = -1;
+		/*Read UV*/
+		ret = si1145_get_uvdata(&tmp);
+		if (!ret) 
+			ghw_sensor_dat.si1152_uv = tmp;
+		else 
+			ghw_sensor_dat.si1152_uv = -1;
+
 		sleep(1);
 	}
 }
@@ -197,6 +227,7 @@ void get_args(int argc, char **argv) {
 				printf ("option -s with vl `%s'\n", optarg);
 				if (is_valid_ipaddr(optarg) == 1) {
 					LOG_INFO("Get server ip: %s", server_ip);
+					g_serip_change = 1;
 				}
 				else {
 					LOG_ERROR("Invalid ipaddr: \"%s\"", optarg);
@@ -218,6 +249,8 @@ int main(int argc, char **argv) {
 	int ret;
 	config_log(LOGDIR, 0x1f, 3);
 	get_args(argc, argv);
+	if (!g_serip_change)
+		LOG_INFO("Run with default serverip: %s", server_ip);
 	/*Test Log*/
 	// testLog();
 
@@ -246,11 +279,16 @@ int main(int argc, char **argv) {
 		gudpskt_test_flag = 1;
 	}
 
+	LOG_INFO("Setup si1145");
+
+
 	/*Run Test Ethernet to test udp send function*/
 	if (gudpskt_test_flag == 1)
 		timer_start(1, TIMER_ID_SEND_TEST_ETH);
-	else 
+	else {
+		si1145_setup();
 		timer_start(1, TIMER_ID_SEND_REPORT);
+	}
 	while(1);
 	return 0;
 }

@@ -6,7 +6,6 @@ include apps.common.mk
 
 APP = light_sensor_cli
 LDLIBS= -lpthread
-CFLAGS= -Wall
 
 # Add any other object files to this list below
 APP_OBJS = light_sensor_cli.o logger.o smbus.o si1145.o ls_socket.o

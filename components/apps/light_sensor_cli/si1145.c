@@ -116,6 +116,18 @@ int si1145_dev_read_word(unsigned char reg, unsigned short *ret_value) {
 	}
 }
 
+int si1145_dev_write_word(unsigned char reg, unsigned short value) {
+	if (i2c_si1145_fd < 0) {
+		LOG_ERROR("i2c dev file is not opened yet");
+		return -1;
+	}
+	if(ioctl(i2c_si1145_fd, I2C_SLAVE_FORCE, I2C_SI1145_ADDR)<0) {
+		LOG_ERROR("Fail to set slave address. Exit");
+		return -2;
+ 	}
+ 	return i2c_smbus_write_word_data(i2c_si1145_fd, reg, value);
+}
+
 int si1145_get_uvdata(int *ret_value) {
 	unsigned char rx_uv_data[2];
 	int ret;
@@ -133,4 +145,75 @@ int si1145_get_uvdata(int *ret_value) {
 	LOG_DEBUG("rx_uv_data[0]: 0x%x, rx_uv_data[1]: 0x%x", rx_uv_data[0], rx_uv_data[1]);
 	*ret_value = ((rx_uv_data[1] << 8) | rx_uv_data[0] + 50)/1000;
 	return 0;
+}
+
+int si1145_get_ps1(int *ret_value) {
+	unsigned char tmp[2];
+	int ret;
+	ret = si1145_dev_read_byte(0x26, &tmp[0]);
+	if (ret != 0) {
+		LOG_ERROR("Read LSB UV Fail");
+		return -1;
+	}
+
+	ret = si1145_dev_read_byte(0x27, &tmp[1]);
+	if (ret != 0) {
+		LOG_ERROR("Read MSB UV Fail");
+		return -1;
+	}
+	LOG_DEBUG("ps1_lsb[0]: 0x%x, ps1_msb[1]: 0x%x", tmp[0], tmp[1]);
+	*ret_value = (tmp[1] << 8) | tmp[0];
+	return 0;
+}
+
+int si1145_get_als(int *ret_value) {
+	int ret;
+	unsigned char tmp[2];
+
+	ret = si1145_dev_write_byte(0x18, 0x0E);
+	if (ret < 0)
+		goto return_error;
+
+	ret = si1145_dev_write_byte(0x18, 0x06);
+	if (ret < 0)
+		goto return_error;
+
+	ret = si1145_dev_read_byte(0x22, &tmp[0]);
+	if (ret < 0)
+		goto return_error;
+
+	ret = si1145_dev_read_byte(0x23, &tmp[1]);
+	if (ret < 0)
+		goto return_error;
+	*ret_value = (tmp[1] << 8) | tmp[0];
+	return 0;
+return_error:
+	return -1;
+}
+
+int si1145_setup() {
+	unsigned short reg_value;
+	int ret;
+	if (i2c_si1145_fd < 0) {
+		LOG_ERROR("i2c dev file is not opened yet");
+		return -1;
+	}
+	if(ioctl(i2c_si1145_fd, I2C_SLAVE_FORCE, I2C_SI1145_ADDR)<0) {
+		LOG_ERROR("Fail to set slave address. Exit");
+		return -2;
+ 	}
+
+ 	/*Send Hardware key*/
+ 	ret = i2c_smbus_write_byte_data(i2c_si1145_fd, 0x07, 0x17);
+ 	if (ret < 0)
+ 		return -1;
+ 	/*Initialize Led current*/
+ 	ret = i2c_smbus_write_byte_data(i2c_si1145_fd, 0x0F, 0xFF);
+ 	if (ret < 0)
+ 		return -1;
+ 	ret = i2c_smbus_write_byte_data(i2c_si1145_fd, 0x10, 0x0F);
+ 	if (ret < 0)
+ 		return -1;
+ 	ret = i2c_smbus_write_word_data(i2c_si1145_fd, 0x17, 0xA1FF);
+ 	return ret;
 }
