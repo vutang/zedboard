@@ -8,7 +8,7 @@ APP = light_sensor_cli
 LDLIBS= -lpthread
 
 # Add any other object files to this list below
-APP_OBJS = light_sensor_cli.o logger.o smbus.o si1145.o ls_socket.o
+APP_OBJS = light_sensor_cli.o logger.o smbus.o si1145.o tsl2591.o ls_socket.o
 
 all: build install
 

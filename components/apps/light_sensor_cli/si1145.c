@@ -21,11 +21,6 @@
 #define I2C_SI1145_ADDR 0x60
 int i2c_si1145_fd;
 
-typedef struct si1145_dat {
-	int uv_data;
-	// u_int32_t temp_c;
-} si1145_dat_t;
-
 int si1145_dev_open() {
 	int ret, file;
 	file = open(I2C_SI1145_DEV_PATH, O_RDWR);

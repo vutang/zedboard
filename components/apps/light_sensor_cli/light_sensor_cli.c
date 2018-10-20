@@ -2,7 +2,7 @@
 * @Author: vutt6
 * @Date:   2018-10-10 17:05:30
 * @Last Modified by:   vutang
-* @Last Modified time: 2018-10-12 17:22:48
+* @Last Modified time: 2018-10-20 15:43:13
 */
 #include <stdio.h>
 #include <pthread.h>
@@ -23,6 +23,7 @@
 #include "ls_socket.h"
 #include "logger.h"
 #include "si1145.h"
+#include "tsl2591.h"
 
 #define LOGDIR "./lightSensor.log"
 #define CLIENT_UDP_PORT 7777
@@ -44,6 +45,8 @@ typedef struct str_sensor_data {
 	int si1145_ps1;
 	int si1145_als;
 	int si1152_uv;
+	short tsl2591_als0;
+	short tsl2591_als1;
 } str_sensor_data_t;
 
 pthread_t gtid_timer, gtid_hwmon; /*For timer thread*/
@@ -110,8 +113,10 @@ void *timer_check(void *p) {
 }
 
 void *hw_mon(void *p) {
-	int tmp = -1, ret;
+	int tmp = -1, ret, ret1, ret2;
+	int buf[2];
 	while (1) {
+		/*Si1145*/
 		/*Force prox and als: as example code*/
 		ret = si1145_dev_write_byte(0x18, 0x05);
 		if (ret < 0) {
@@ -139,6 +144,20 @@ void *hw_mon(void *p) {
 		else 
 			ghw_sensor_dat.si1152_uv = -1;
 
+		/*Tsl2591*/
+		ret1 = tsl2591_dev_read_byte(C0DATAL, &buf[0]);
+		ret2 = tsl2591_dev_read_byte(C0DATAH, &buf[1]);
+		if ((ret1 == 0) && (ret2 == 0)) 
+			ghw_sensor_dat.tsl2591_als0 = (short) (buf[1] * 256 + buf[0]);
+		else
+			ghw_sensor_dat.tsl2591_als0 = -1;
+
+		ret1 = tsl2591_dev_read_byte(C1DATAL, &buf[0]);
+		ret2 = tsl2591_dev_read_byte(C1DATAH, &buf[1]);
+		if ((ret1 == 0) && (ret2 == 0)) 
+			ghw_sensor_dat.tsl2591_als1 = (short) (buf[1] * 256 + buf[0]);
+		else
+			ghw_sensor_dat.tsl2591_als1 = -1;
 		sleep(1);
 	}
 }
@@ -245,6 +264,12 @@ void get_args(int argc, char **argv) {
 	}
 }
 
+void init_hw(void) {
+	/*Initialize hw to use*/
+	/*Do nothing by now - fix me*/
+	return;
+}
+
 int main(int argc, char **argv) {
 	int ret;
 	config_log(LOGDIR, 0x1f, 3);
@@ -270,6 +295,8 @@ int main(int argc, char **argv) {
 	} 
 	LOG_INFO("Open timer thread");
 	open_timer_thd();
+
+	init_hw();
 
 	LOG_INFO("Init timer");
 	init_timer();
