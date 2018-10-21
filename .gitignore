@@ -1,6 +1,6 @@
 build/
 images/
-subsystems/
+subsystems
 .petalinux/*
 !.petalinux/metadata
 *.o
