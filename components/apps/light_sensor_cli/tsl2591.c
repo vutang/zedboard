@@ -28,12 +28,12 @@ int i2c_tsl2591_fd;
 
 int tsl2591_dev_open() {
 	int ret, file;
-	file = open(I2C_tsl2591_DEV_PATH, O_RDWR);
+	file = open(I2C_TSL2591_DEV_PATH, O_RDWR);
 	if (file < 0) {
-		LOG_ERROR("Cannot open %s errno = %s", I2C_tsl2591_DEV_PATH, strerror(errno));
+		LOG_ERROR("Cannot open %s errno = %s", I2C_TSL2591_DEV_PATH, strerror(errno));
 		return -1;
 	}
-	ret = ioctl(file, I2C_SLAVE_FORCE, I2C_tsl2591_ADDR);
+	ret = ioctl(file, I2C_SLAVE_FORCE, I2C_TSL2591_ADDR);
 	if (ret < 0) {
 		LOG_ERROR("Set I2C_SLAVE_FORCE fail errno = %s", strerror(errno));
 		return -1;
@@ -45,7 +45,7 @@ int tsl2591_dev_open() {
 		LOG_ERROR("Read data from i2c bus fail errno = %s", strerror(errno));
 		return -1;
 	}
-	LOG_DEBUG("Open %s success (Device ID: 0x%20x)", I2C_tsl2591_DEV_PATH, ret);
+	LOG_DEBUG("Open %s success (Device ID: 0x%20x)", I2C_TSL2591_DEV_PATH, ret);
 	i2c_tsl2591_fd = file;
 	return 0;
 }
@@ -63,7 +63,7 @@ int tsl2591_dev_write_byte(unsigned char reg, unsigned char value) {
 		LOG_ERROR("Device is not open yet");
 		return -1;
 	}
-	if(ioctl(i2c_tsl2591_fd, I2C_SLAVE_FORCE, I2C_tsl2591_ADDR)<0) {
+	if(ioctl(i2c_tsl2591_fd, I2C_SLAVE_FORCE, I2C_TSL2591_ADDR)<0) {
 		LOG_ERROR("Fail to set slave address. Exit");
 		return -2;
  	}
@@ -72,7 +72,7 @@ int tsl2591_dev_write_byte(unsigned char reg, unsigned char value) {
  	datasheet. Format:
 	|CMD[7:7]|TRANSACTION[6:5]|ADDR/SF[4:0]|
  	*/
- 	cmd = (reg & 0x1F) | (0x01 << 5) | (0x1 << 7)
+ 	cmd = (reg & 0x1F) | (0x01 << 5) | (0x1 << 7);
 	ret = i2c_smbus_write_byte_data(i2c_tsl2591_fd, cmd, value);	
 	return ret;
 }
@@ -85,7 +85,7 @@ int tsl2591_dev_read_byte(unsigned char reg, unsigned char *ret_value) {
 		LOG_ERROR("i2c dev file is not opened yet");
 		return -1;
 	}
-	if(ioctl(i2c_tsl2591_fd, I2C_SLAVE_FORCE, I2C_tsl2591_ADDR)<0) {
+	if(ioctl(i2c_tsl2591_fd, I2C_SLAVE_FORCE, I2C_TSL2591_ADDR)<0) {
 		LOG_ERROR("Fail to set slave address. Exit");
 		return -2;
  	}

@@ -40,15 +40,6 @@ typedef struct {
 	unsigned long end;
 } ls_timer_t;
 
-/*Report structure*/
-typedef struct str_sensor_data {
-	int si1145_ps1;
-	int si1145_als;
-	int si1152_uv;
-	short tsl2591_als0;
-	short tsl2591_als1;
-} str_sensor_data_t;
-
 pthread_t gtid_timer, gtid_hwmon; /*For timer thread*/
 int8_t gudpskt_test_flag = 0, g_serip_change = 0;
 char server_ip[INET_ADDRSTRLEN] = "192.168.120.100";
