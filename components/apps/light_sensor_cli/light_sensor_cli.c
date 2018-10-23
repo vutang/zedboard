@@ -292,11 +292,6 @@ int main(int argc, char **argv) {
 	LOG_INFO("Init timer");
 	init_timer();
 
-	if (!strcmp(argv[1], "test")) {
-		LOG_INFO("Get command Test");
-		gudpskt_test_flag = 1;
-	}
-
 	LOG_INFO("Setup si1145");
 
 
