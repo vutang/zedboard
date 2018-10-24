@@ -79,7 +79,23 @@ void send_udp_test_pattern(void) {
 }
 
 void send_udp_hw_report(str_sensor_data_t *hw_sensor_dat) {
-	int ret, sent_len;
+	int ret, sent_len, len = sizeof(str_sensor_data_t), i, cnt = 0;
+	char *ptr = (char *) hw_sensor_dat;
+	char hex[100];
+
+	LOG_DEBUG("Send report msg to %s", server_ip);
+	LOG_DEBUG("\t si1145_ps1: %d", hw_sensor_dat->si1145_ps1);
+	LOG_DEBUG("\t si1145_als: %d", hw_sensor_dat->si1145_als);
+	LOG_DEBUG("\t si1152_uv: %d", hw_sensor_dat->si1152_uv);
+	LOG_DEBUG("\t tsl2591_als0: %d", hw_sensor_dat->tsl2591_als0);
+	LOG_DEBUG("\t tsl2591_als1: %d", hw_sensor_dat->tsl2591_als1);
+
+	/*Dump UDP Payload*/
+	for (i = 0; i < len; i++) {
+		cnt += sprintf(hex + cnt, "%02x ", *(ptr + i));
+	}
+	LOG_DEBUG("UDP payload (hex): %s", hex);
+
 	ret = cli_udpskt_send(&gcli_skt, (void *) hw_sensor_dat, sizeof(str_sensor_data_t), \
 		inet_addr(server_ip), SERVER_UDP_PORT, &sent_len);
 	if (ret < 0) {

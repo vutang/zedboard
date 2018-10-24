@@ -19,7 +19,7 @@
 
 #define I2C_SI1145_DEV_PATH "/dev/i2c-0"
 #define I2C_SI1145_ADDR 0x60
-int i2c_si1145_fd;
+int i2c_si1145_fd = -1;
 
 int si1145_dev_open() {
 	int ret, file;
@@ -187,6 +187,7 @@ return_error:
 }
 
 int si1145_setup() {
+	LOG_INFO("Setup si1145");
 	unsigned short reg_value;
 	int ret;
 	if (i2c_si1145_fd < 0) {

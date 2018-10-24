@@ -105,7 +105,7 @@ void *timer_check(void *p) {
 
 void *hw_mon(void *p) {
 	int tmp = -1, ret, ret1, ret2;
-	int buf[2];
+	char buf[2];
 	while (1) {
 		/*Si1145*/
 		/*Force prox and als: as example code*/
@@ -138,15 +138,19 @@ void *hw_mon(void *p) {
 		/*Tsl2591*/
 		ret1 = tsl2591_dev_read_byte(C0DATAL, &buf[0]);
 		ret2 = tsl2591_dev_read_byte(C0DATAH, &buf[1]);
-		if ((ret1 == 0) && (ret2 == 0)) 
+		if ((ret1 == 0) && (ret2 == 0)) {
+			LOG_DEBUG("Read als0 tsl2591: LSB 0x%02x, MSB 0x%02x", buf[0], buf[1]);
 			ghw_sensor_dat.tsl2591_als0 = (short) (buf[1] * 256 + buf[0]);
+		}
 		else
 			ghw_sensor_dat.tsl2591_als0 = -1;
 
 		ret1 = tsl2591_dev_read_byte(C1DATAL, &buf[0]);
 		ret2 = tsl2591_dev_read_byte(C1DATAH, &buf[1]);
-		if ((ret1 == 0) && (ret2 == 0)) 
+		if ((ret1 == 0) && (ret2 == 0)) {
+			LOG_DEBUG("Read als1 tsl2591: LSB 0x%02x, MSB 0x%02x", buf[0], buf[1]);
 			ghw_sensor_dat.tsl2591_als1 = (short) (buf[1] * 256 + buf[0]);
+		}
 		else
 			ghw_sensor_dat.tsl2591_als1 = -1;
 		sleep(1);
@@ -284,16 +288,21 @@ int main(int argc, char **argv) {
 	if (ret < 0) {
 		LOG_ERROR("Open si1145 dev fail");
 	} 
+
+	LOG_DEBUG("Open tsl2591 dev");
+	ret = tsl2591_dev_open();
+	if (ret < 0) {
+		LOG_ERROR("Open tsl2591 dev fail");
+	} 
+
 	LOG_INFO("Open timer thread");
 	open_timer_thd();
+	open_hw_mon();
 
 	init_hw();
 
 	LOG_INFO("Init timer");
 	init_timer();
-
-	LOG_INFO("Setup si1145");
-
 
 	/*Run Test Ethernet to test udp send function*/
 	if (gudpskt_test_flag == 1)

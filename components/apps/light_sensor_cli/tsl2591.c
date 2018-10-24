@@ -24,7 +24,7 @@
 #define I2C_TSL2591_DEV_PATH "/dev/i2c-1"
 #define I2C_TSL2591_ADDR 0x29 /*Fixed in Datasheet*/
 
-int i2c_tsl2591_fd;
+int i2c_tsl2591_fd = -1;
 
 int tsl2591_dev_open() {
 	int ret, file;
