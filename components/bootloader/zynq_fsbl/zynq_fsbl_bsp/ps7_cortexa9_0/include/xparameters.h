@@ -20,17 +20,6 @@
 
 /******************************************************************/
 
-/* Definitions for driver ZEDBOARDOLED */
-#define XPAR_ZEDBOARDOLED_NUM_INSTANCES 1
-
-/* Definitions for peripheral ZEDBOARDOLED_0 */
-#define XPAR_ZEDBOARDOLED_0_DEVICE_ID 0
-#define XPAR_ZEDBOARDOLED_0_S00_AXI_BASEADDR 0x43C00000
-#define XPAR_ZEDBOARDOLED_0_S00_AXI_HIGHADDR 0x43C0FFFF
-
-
-/******************************************************************/
-
 
 /* Definitions for peripheral PS7_DDR_0 */
 #define XPAR_PS7_DDR_0_S_AXI_BASEADDR 0x00100000
@@ -231,6 +220,40 @@
 #define XPAR_XGPIOPS_0_DEVICE_ID XPAR_PS7_GPIO_0_DEVICE_ID
 #define XPAR_XGPIOPS_0_BASEADDR 0xE000A000
 #define XPAR_XGPIOPS_0_HIGHADDR 0xE000AFFF
+
+
+/******************************************************************/
+
+/* Definitions for driver IICPS */
+#define XPAR_XIICPS_NUM_INSTANCES 2
+
+/* Definitions for peripheral PS7_I2C_0 */
+#define XPAR_PS7_I2C_0_DEVICE_ID 0
+#define XPAR_PS7_I2C_0_BASEADDR 0xE0004000
+#define XPAR_PS7_I2C_0_HIGHADDR 0xE0004FFF
+#define XPAR_PS7_I2C_0_I2C_CLK_FREQ_HZ 111111115
+
+
+/* Definitions for peripheral PS7_I2C_1 */
+#define XPAR_PS7_I2C_1_DEVICE_ID 1
+#define XPAR_PS7_I2C_1_BASEADDR 0xE0005000
+#define XPAR_PS7_I2C_1_HIGHADDR 0xE0005FFF
+#define XPAR_PS7_I2C_1_I2C_CLK_FREQ_HZ 111111115
+
+
+/******************************************************************/
+
+/* Canonical definitions for peripheral PS7_I2C_0 */
+#define XPAR_XIICPS_0_DEVICE_ID XPAR_PS7_I2C_0_DEVICE_ID
+#define XPAR_XIICPS_0_BASEADDR 0xE0004000
+#define XPAR_XIICPS_0_HIGHADDR 0xE0004FFF
+#define XPAR_XIICPS_0_I2C_CLK_FREQ_HZ 111111115
+
+/* Canonical definitions for peripheral PS7_I2C_1 */
+#define XPAR_XIICPS_1_DEVICE_ID XPAR_PS7_I2C_1_DEVICE_ID
+#define XPAR_XIICPS_1_BASEADDR 0xE0005000
+#define XPAR_XIICPS_1_HIGHADDR 0xE0005FFF
+#define XPAR_XIICPS_1_I2C_CLK_FREQ_HZ 111111115
 
 
 /******************************************************************/
