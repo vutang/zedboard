@@ -1,0 +1,436 @@
+#!/bin/bash
+#
+# COPYRIGHT NOTICE
+# Copyright 1986-2014 Xilinx, Inc. All Rights Reserved.
+#
+
+
+#
+# Check if DIR contains valid executables for PLAT
+#
+# Usage: 
+#  if IS_VALID_TOOL() DIR PLAT; then
+#
+#  dir   - Directory to test
+#  plat  - lin or lin64
+#  valid - Will be set to True if the following directories exist: 
+#                   $XILINX/bin/PLAT
+#                   $XILINX/lib/PLAT
+#                   $XILINX/xilinx
+#
+# WARNING: The variables _dir, _plat, and _valid cannot be used elsewhere 
+#          in loader
+IS_VALID_TOOL() {
+  _dir=$1
+  _plat=$2
+  _valid=0
+  for d in lib/$_plat bin/$_plat; do
+    if [ ! -d "$_dir/$d" ]; then
+      _valid=1
+    fi
+  done
+  return $_valid
+}
+
+if [ "$XIL_NO_OVERRIDE" = "1" ]; then
+  XIL_PA_NO_XILINX_OVERRIDE=1
+  XIL_PA_NO_XILINX_SDK_OVERRIDE=1
+  XIL_PA_NO_MYVIVADO_OVERRIDE=1
+  export XIL_PA_NO_XILINX_OVERRIDE
+  export XIL_PA_NO_XILINX_SDK_OVERRIDE XIL_PA_NO_MYVIVADO_OVERRIDE
+fi
+
+if [ -z "$_RDI_SETENV_RUN" ]; then
+  . "`dirname \"$0\"`/setupEnv.sh"
+fi
+if [ ! -z "$_RDI_SETENV_RUN" ]; then
+  unset _RDI_SETENV_RUN
+fi
+
+if [ "`uname -o`" == "Cygwin" ]; then
+  trap "" INT
+  "$RDI_BINROOT/loader.bat" "$@"
+  exit $?
+fi
+
+RDI_OS_ARCH=32
+case `uname -m` in
+  x86_64) 
+    RDI_OS_ARCH=64
+    ;;
+esac
+
+RDI_OPT_EXT=.o
+
+export RDI_OPT_EXT
+#
+# If True check for the existence of RDI_PROG prior to invoking the
+# Function RDI_EXEC_COMMANDS
+#
+RDI_CHECK_PROG=True
+
+case "$XILINX" in 
+  *:*)
+    if [ "$XIL_SUPPRESS_OVERRIDE_WARNINGS" != "1" ]; then
+      echo "WARNING: \$XILINX contains multiple entries. Setting"
+      echo "         \$XIL_PA_NO_XILINX_OVERRIDE to 1."
+      echo 
+    fi
+    XIL_PA_NO_XILINX_OVERRIDE=1
+    ;;
+esac
+
+case "$XILINX_SDK" in 
+  *:*)
+    if [ "$XIL_SUPPRESS_OVERRIDE_WARNINGS" != "1" ]; then
+      echo "WARNING: \$XILINX_SDK contains multiple entries. Setting"
+      echo "         \$XIL_PA_NO_XILINX_SDK_OVERRIDE to 1."
+      echo 
+    fi
+    XIL_PA_NO_XILINX_SDK_OVERRIDE=1
+    ;;
+esac
+
+if [ "$XIL_SUPPRESS_OVERRIDE_WARNINGS" != "1" ]; then
+  if [ "$XIL_PA_NO_XILINX_OVERRIDE" = "1" ]; then
+    echo "WARNING: \$XIL_PA_NO_XILINX_OVERRIDE is set to 1."
+    echo "         When \$XIL_PA_NO_XILINX_OVERRIDE is enabled"
+    echo "         \$XILINX, \$MYXILINX, \$PATH, and \$LD_LIBRARY_PATH must"
+    echo "         be manually set."
+  fi
+
+  if [ "$XIL_PA_NO_XILINX_SDK_OVERRIDE" = "1" ]; then
+    echo "WARNING: \$XIL_PA_NO_XILINX_SDK_OVERRIDE is set to 1."
+    echo "         When \$XIL_PA_NO_XILINX_SDK_OVERRIDE is enabled"
+    echo "         \$XILINX_SDK, \$PATH must be manually set."
+  fi
+fi
+
+#
+# Handle options. If this is a release build rdiArgs.sh will
+# be mostly empty.
+#
+. "$RDI_BINROOT/rdiArgs.sh" "$@"
+
+#
+# Enforce java execution if RDI_JAVALAUNCH is defined
+#
+if [ ! -z "$RDI_JAVALAUNCH" ]; then
+  RDI_CHECK_PROG=False
+  RDI_EXEC_COMMANDS() {
+    RDI_JAVA_COMMANDS "$@"
+  }
+fi
+
+#
+# Populate PATH and LD_LIBRARY_PATH with XILINX libraries and executables
+#
+if [ "$XIL_PA_NO_XILINX_OVERRIDE" != "1" ]; then
+  #
+  # On 64bit hosts look for 64bit XILINX tools first then fall back 32bit.
+  #
+  if [ ! -z "$XILINX" ]; then
+    if [ "$RDI_OS_ARCH" == "64" ]; then
+      if [ "$RDI_PLATFORM" == "lnx64"  ]; then
+        if IS_VALID_TOOL "$XILINX" lin64; then
+          RDI_ISE_PLATFORM=lin64
+          _RDI_SET_XILINX_PATH=1
+        else
+          if IS_VALID_TOOL "$XILINX" lin; then
+            echo "ERROR: \$XILINX does not contain 64bit executables. Use -m32 to run 32bit executables."
+            exit 1
+          fi
+        fi
+      else
+        if IS_VALID_TOOL "$XILINX" lin; then
+          RDI_ISE_PLATFORM=lin
+          _RDI_SET_XILINX_PATH=1
+        fi
+      fi
+    else
+      if IS_VALID_TOOL "$XILINX" lin; then
+        RDI_ISE_PLATFORM=lin
+        _RDI_SET_XILINX_PATH=1
+      fi
+    fi
+    if [ ! -z "$_RDI_SET_XILINX_PATH" ]; then
+      if [ ! -z "$MYXILINX" ]; then
+        RDI_PREPEND_PATH=$MYXILINX/bin/$RDI_ISE_PLATFORM:$XILINX/bin/$RDI_ISE_PLATFORM
+        RDI_PREPEND_LD_LIBRARY_PATH=$MYXILINX/lib/$RDI_ISE_PLATFORM:$XILINX/lib/$RDI_ISE_PLATFORM
+      else
+        RDI_PREPEND_PATH=$XILINX/bin/$RDI_ISE_PLATFORM
+        RDI_PREPEND_LD_LIBRARY_PATH=$XILINX/lib/$RDI_ISE_PLATFORM
+      fi
+      export RDI_PREPEND_PATH RDI_PREPEND_LD_LIBRARY_PATH
+    fi
+  fi
+fi
+
+#
+# Populate PATH with XILINX_SDK executables
+#
+if [ "$XIL_PA_NO_XILINX_SDK_OVERRIDE" != "1" ]; then
+  if [ ! -z "$XILINX_SDK" ]; then
+    if [ "$RDI_OS_ARCH" == "64" ]; then
+      if [ "$RDI_PLATFORM" == "lnx64"  ]; then
+        _valid=1
+        for d in lib/lin64 bin/lin64; do
+          if [ ! -d "$XILINX_SDK/$d" ]; then
+            _valid=0
+          fi
+        done
+        if [ "$_valid" == "1" ]; then
+          RDI_SDK_PLATFORM=lin64
+        fi
+      else
+        _valid=1
+        for d in lib/lin bin/lin; do
+          if [ ! -d "$XILINX_SDK/$d" ]; then
+            _valid=0
+          fi
+        done
+        if [ "$_valid" == "1" ]; then
+          RDI_SDK_PLATFORM=lin
+        fi
+      fi
+    else
+      _valid=1
+      for d in lib/lin bin/lin; do
+        if [ ! -d "$XILINX_SDK/$d" ]; then
+          _valid=0
+        fi
+      done
+      if [ "$_valid" == "1" ]; then
+        RDI_SDK_PLATFORM=lin
+      fi
+    fi
+    if [ ! -z "$RDI_SDK_PLATFORM" ]; then
+      if [ ! -z "$RDI_PREPEND_PATH" ]; then
+        RDI_PREPEND_PATH=$XILINX_SDK/bin/$RDI_SDK_PLATFORM:$RDI_PREPEND_PATH
+      else
+        RDI_PREPEND_PATH=$XILINX_SDK/bin/$RDI_SDK_PLATFORM
+      fi
+      export RDI_PREPEND_PATH
+    fi
+    if [ ! -z "$RDI_PREPEND_PATH" ]; then
+      RDI_PREPEND_PATH=$XILINX_SDK/bin:$RDI_PREPEND_PATH
+    else
+      RDI_PREPEND_PATH=$XILINX_SDK/bin
+    fi
+    export RDI_PREPEND_PATH
+  fi
+fi
+
+if [ ! -z "$XILINX_COMMON_TOOLS" ]; then
+  if [ ! -z "$RDI_ISE_PLATFORM" ]; then
+    if IS_VALID_TOOL "$XILINX_COMMON_TOOLS" $RDI_ISE_PLATFORM; then
+      if [ ! -z "$RDI_PREPEND_PATH" ]; then
+        RDI_PREPEND_PATH=$RDI_PREPEND_PATH:$XILINX_COMMON_TOOLS/bin/$RDI_ISE_PLATFORM
+      else 
+        RDI_PREPEND_PATH=$XILINX_COMMON_TOOLS/bin/$RDI_ISE_PLATFORM
+      fi
+      if [ ! -z "$RDI_PREPEND_LD_LIBRARY_PATH" ]; then
+        RDI_PREPEND_LD_LIBRARY_PATH=$RDI_PREPEND_LD_LIBRARY_PATH:$XILINX_COMMON_TOOLS/lib/$RDI_ISE_PLATFORM
+      else
+        RDI_PREPEND_LD_LIBRARY_PATH=$XILINX_COMMON_TOOLS/lib/$RDI_ISE_PLATFORM
+      fi
+      export RDI_PREPEND_PATH RDI_PREPEND_LD_LIBRARY_PATH
+    else
+      echo
+      echo "WARNING: Unable to find common Xilinx tools. Automatic updates and "
+      echo "         license management will be disabled."
+      echo
+    fi
+  fi
+fi
+
+XILINX_DSP=$XILINX
+XILINX_PLANAHEAD="$RDI_APPROOT"
+export XILINX_DSP XILINX_PLANAHEAD
+
+if [ ! -d "$RDI_JAVAROOT" -a -z "$RDI_NO_JRE" ]; then
+  echo "ERROR: $RDI_JAVAROOT does not exist."
+  if [ -d "$RDI_APPROOT/data/patches" ]; then
+    echo " A baseline is the path of the full install being patched and is required"
+    echo " for patches to function correctly.\n"
+    echo " To establish a baseline for this patch, run 'establish-baseline.sh'"
+    echo " in '$RDI_APPROOT/scripts/patch'"
+    echo " and enter the necessary install path when prompted.\n"
+    echo " If you received this error running from a non-patch installation,"
+    echo " please contact customer support."
+  else
+    echo " Vivado is unable to locate a valid installation of JAVA. PlanAhead is necessary\n"
+    echo " for Vivado to run. Please contact customer support for assistance."
+  fi
+  exit 1
+fi
+
+if [ ! -z "$RDI_NO_JRE" ]; then
+  unset RDI_NO_JRE
+fi
+
+if [ -z "$RDI_PROG" -a "$RDI_CHECK_PROG" = "True" ]; then
+  echo "ERROR: No executable to launch. The -exec option *must* be used"
+  echo "       when invoking the loader."
+  echo "       Example:"
+  echo "         $0 -exec EXECUTABLE"
+  echo "         Where: EXECUTABLE is the name of binary in bin/unwrapped/PLAT.{o,d}"
+  exit 1
+fi
+RDI_PROGNAME="$RDI_PROG"
+RDI_PROG="$RDI_APPROOT/bin/unwrapped/$RDI_PLATFORM$RDI_OPT_EXT/$RDI_PROGNAME"
+#Locate RDI_PROG in patch areas.
+IFS=$':'
+for SUB_PATCH in $RDI_PATCHROOT; do
+    if [ -f "$SUB_PATCH/bin/unwrapped/$RDI_PLATFORM$RDI_OPT_EXT/$RDI_PROGNAME" ]; then
+        RDI_PROG="$SUB_PATCH/bin/unwrapped/$RDI_PLATFORM$RDI_OPT_EXT/$RDI_PROGNAME"
+    fi
+done
+IFS=$' \t\n'
+export RDI_PROG
+
+#Add patch lib areas before %RDI_APPROOT%/lib
+RDI_LIBDIR="$RDI_APPROOT/lib/$RDI_PLATFORM$RDI_OPT_EXT"
+IFS=$':'
+for SUB_PATCH in $RDI_PATCHROOT; do
+    if [ -d "$SUB_PATCH/lib/$RDI_PLATFORM$RDI_OPT_EXT" ]; then
+        RDI_LIBDIR="$SUB_PATCH/lib/$RDI_PLATFORM$RDI_OPT_EXT:$RDI_LIBDIR"
+    fi
+done
+IFS=$' \t\n'
+export RDI_LIBDIR
+
+#Add patch bin areas before %RDI_APPROOT%/bin
+RDI_BINDIR="$RDI_APPROOT/bin"
+IFS=$':'
+for SUB_PATCH in $RDI_PATCHROOT; do
+    if [ -d "$SUB_PATCH/bin" ]; then
+        RDI_BINDIR="$SUB_PATCH/bin:$RDI_BINDIR"
+    fi
+done
+IFS=$' \t\n'
+
+# Set TCL_LIBRARY so that planAhead can find init.tcl at startup
+TCL_LIBRARY="$RDI_APPROOT/tps/tcl/tcl8.5"
+export TCL_LIBRARY
+
+# Set ISL path
+ISL_IOSTREAMS_RSA="$RDI_APPROOT/tps/isl"
+export ISL_IOSTREAMS_RSA
+
+# Control what shared objects planAhead.java loads.  This variable
+# allows to conditional loading depending for rmake builds vs hmake
+# builds.
+RDI_BUILD=yes
+export RDI_BUILD
+
+# Set the library load path
+if [ -z "$LD_LIBRARY_PATH" ]; then
+  # This variable is used to restore the LD_LIBRARY_PATH when executables are invoked from planAhead.
+  if [ ! -z "$RDI_PREPEND_LD_LIBRARY_PATH" ]; then
+    HDIPRELDPATH=$RDI_PREPEND_LD_LIBRARY_PATH
+  fi
+  if [ -d "$RDI_JAVAROOT" ]; then
+    LD_LIBRARY_PATH=$RDI_LIBDIR:$RDI_JAVAROOT/lib/$RDI_JAVA_PLATFORM:$RDI_JAVAROOT/lib/$RDI_JAVA_PLATFORM/server
+  else
+    LD_LIBRARY_PATH=$RDI_LIBDIR
+  fi
+else
+  # This variable is used to restore the LD_LIBRARY_PATH when executables are invoked from planAhead.
+  if [ ! -z "$RDI_PREPEND_LD_LIBRARY_PATH" ]; then
+    HDIPRELDPATH=$RDI_PREPEND_LD_LIBRARY_PATH:$LD_LIBRARY_PATH
+  else
+    HDIPRELDPATH=$LD_LIBRARY_PATH
+  fi
+  if [ -d "$RDI_JAVAROOT" ]; then
+    LD_LIBRARY_PATH=$RDI_LIBDIR:$RDI_JAVAROOT/lib/$RDI_JAVA_PLATFORM:$RDI_JAVAROOT/lib/$RDI_JAVA_PLATFORM/server:$LD_LIBRARY_PATH
+  else
+    LD_LIBRARY_PATH=$RDI_LIBDIR:$LD_LIBRARY_PATH
+  fi
+fi
+export LD_LIBRARY_PATH HDIPRELDPATH
+
+# Add planAhead binary location to path.
+if [ ! -z "$RDI_PREPEND_PATH" ]; then
+  if [ -z "$PATH" ]; then
+    PATH=$RDI_PREPEND_PATH
+  else
+    PATH=$RDI_PREPEND_PATH:$PATH
+  fi
+fi
+if [ -z "$PATH" ]; then
+  PATH=$RDI_BINDIR
+else
+  PATH=$RDI_BINDIR:$PATH
+fi
+export PATH
+
+# set up RT_LIBPATH
+RT_LIBPATH=$RDI_APPROOT/scripts/rt/data
+IFS=$':'
+for SUB_PATCH in $RDI_PATCHROOT; do
+    if [ -d "$SUB_PATCH/scripts/rt/data" ]; then
+        RT_LIBPATH="$SUB_PATCH/scripts/rt/data"
+        break
+    fi
+done
+IFS=$' \t\n'
+export RT_LIBPATH
+
+RT_TCL_PATH=$RDI_APPROOT/scripts/rt/base_tcl/tcl
+IFS=$':'
+for SUB_PATCH in $RDI_PATCHROOT; do
+    if [ -d "$SUB_PATCH/scripts/rt/base_tcl/tcl" ]; then
+        RT_TCL_PATH="$SUB_PATCH/scripts/rt/base_tcl/tcl"
+        break
+    fi
+done
+IFS=$' \t\n'
+export RT_TCL_PATH
+
+SYNTH_COMMON=$RT_LIBPATH
+export SYNTH_COMMON
+
+TMP_MYVIVADO=""
+# set RDI_APPROOT to be a multipath at this point
+IFS=$':'
+for SUB_PATCH in $RDI_PATCHROOT; do
+    if [ -d "$SUB_PATCH" ]; then
+        RDI_APPROOT="$SUB_PATCH:$RDI_APPROOT"
+        TMP_MYVIVADO="$SUB_PATCH:$TMP_MYVIVADO"
+    fi
+done
+IFS=$' \t\n'
+export RDI_APPROOT
+
+if [ "$RDI_VERBOSE" = "True" ]; then
+  echo "     **** ENVIRONMENT DEBUG INFO ****"
+  echo "              XILINX: \"$XILINX\""
+  echo "          XILINX_SDK: \"$XILINX_SDK\""
+  echo "            MYVIVADO: \"$TMP_MYVIVADO\""
+  echo "         RDI_APPROOT: \"$RDI_APPROOT\""
+  echo "         HDI_APPROOT: \"$HDI_APPROOT\""
+  echo "        RDI_BASEROOT: \"$RDI_BASEROOT\""
+  echo "         RDI_DATADIR: \"$RDI_DATADIR\""
+  echo "          RDI_LIBDIR: \"$RDI_LIBDIR\""
+  echo "          RDI_BINDIR: \"$RDI_BINDIR\""
+  if [ -d "$RDI_JAVAROOT" ]; then
+    echo "        RDI_JAVAROOT: \"$RDI_JAVAROOT\""
+  fi
+  echo "     LD_LIBRARY_PATH: \"$LD_LIBRARY_PATH\""
+  echo "                PATH: \"$PATH\""
+fi
+
+if [ "$RDI_CHECK_PROG" = True ]; then
+  if [ ! -f "$RDI_PROG" ]; then
+    if [ "$RDI_PLATFORM" == "lnx64"  ]; then
+      echo "ERROR: Could not find 64-bit executable."
+    else
+      echo "ERROR: Could not find 32-bit executable."
+    fi
+    echo "ERROR: $RDI_PROG does not exist"
+    exit 1
+  fi
+fi
+
+RDI_EXEC_COMMANDS "${RDI_ARGS[@]}"

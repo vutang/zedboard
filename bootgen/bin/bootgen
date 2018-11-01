@@ -1,0 +1,37 @@
+#!/bin/bash
+#
+# COPYRIGHT NOTICE
+# Copyright 1986-1999, 2001-2011 Xilinx, Inc. All Rights Reserved.
+#
+
+##
+# Setup default environmental variables
+##
+# RDI_BINROOT - Directory *this* script exists in
+#  E.x. 
+#    /usr/Test/Install/bin/example
+#    RDI_BINROOT=/usr/Test/Install/bin
+#
+# RDI_APPROOT - One directory above RDI_BINROOT
+#  E.x. 
+#    /usr/Test/Install/bin/example
+#    RDI_APPROOT=/usr/Test/Install
+#
+# RDI_BASEROOT - One directory above RDI_APPROOT
+#  E.x. 
+#    /usr/Test/Install/bin/example
+#    RDI_BINROOT=/usr/Test
+##
+. "`dirname \"$0\"`/setupEnv.sh"
+
+##
+# Launch the loader and specify the executable to launch
+##
+#
+# Loader arguments:
+#   -exec   -- Name of executable to launch
+##
+RDI_PROG=`basename "$0"`
+RDI_NO_JRE=yes
+export RDI_NO_JRE
+"$RDI_BINROOT"/loader -exec $RDI_PROG "$@"
