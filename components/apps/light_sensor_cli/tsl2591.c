@@ -2,7 +2,7 @@
 * @Author: vutang
 * @Date:   2018-10-20 15:11:55
 * @Last Modified by:   vutang
-* @Last Modified time: 2018-10-20 15:44:12
+* @Last Modified time: 2018-11-01 09:31:09
 */
 #include <sys/ioctl.h>
 #include <stdlib.h>
@@ -72,8 +72,7 @@ int tsl2591_dev_write_byte(unsigned char reg, unsigned char value) {
  	datasheet. Format:
 	|CMD[7:7]|TRANSACTION[6:5]|ADDR/SF[4:0]|
  	*/
- 	cmd = (reg & 0x1F) | (0x01 << 5) | (0x1 << 7);
-	ret = i2c_smbus_write_byte_data(i2c_tsl2591_fd, cmd, value);	
+	ret = i2c_smbus_write_byte_data(i2c_tsl2591_fd, reg, value);	
 	return ret;
 }
 
@@ -90,8 +89,7 @@ int tsl2591_dev_read_byte(unsigned char reg, unsigned char *ret_value) {
 		return -2;
  	}
 
- 	cmd = (reg & 0x1F) | (0x01 << 5) | (0x1 << 7);
-	tmp = i2c_smbus_read_byte_data(i2c_tsl2591_fd, cmd);
+	tmp = i2c_smbus_read_byte_data(i2c_tsl2591_fd, reg);
 	if(tmp < 0) {
 		LOG_ERROR("Read smbus fail");
 		return -3;
@@ -101,3 +99,11 @@ int tsl2591_dev_read_byte(unsigned char reg, unsigned char *ret_value) {
 		return 0;
 	}
 }	
+
+/*Enables the chip, so it's ready to take readings*/
+int tsl2591_enable() {
+	LOG_DEBUG("Enable TSL2591");
+	return tsl2591_dev_write_byte(TSL2591_COMMAND_BIT | TSL2591_REGISTER_ENABLE,\
+			TSL2591_ENABLE_POWERON | TSL2591_ENABLE_AEN | TSL2591_ENABLE_AIEN | \
+			TSL2591_ENABLE_NPIEN);
+}
