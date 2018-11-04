@@ -675,6 +675,7 @@ static int initr_kbd(void)
 
 static int run_main_loop(void)
 {
+	printf("[vux] - run_main_loop\n");
 #ifdef CONFIG_SANDBOX
 	sandbox_main_loop_init();
 #endif

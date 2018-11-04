@@ -4,7 +4,7 @@
  *
  * SPDX-License-Identifier:	GPL-2.0+
  */
-
+#define DEBUG
 #include <common.h>
 #include <autoboot.h>
 #include <bootretry.h>
@@ -226,7 +226,7 @@ static int abortboot_normal(int bootdelay)
 	printf(CONFIG_MENUPROMPT);
 #else
 	if (bootdelay >= 0)
-		printf("Hit any key to stop autoboot: %2d ", bootdelay);
+		printf("[vux] Hit any key to stop autoboot: %2d ", bootdelay);
 #endif
 
 #if defined CONFIG_ZERO_BOOTDELAY_CHECK
