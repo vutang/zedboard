@@ -1,11 +1,10 @@
 build/
 images/
-subsystems
+subsystems/
+!subsystems_lightsensor/
 .petalinux/*
 !.petalinux/metadata
 *.o
-!bootgen/bin/unwrapped/lnx64.o
 *.jou
 *.log
-hw-description
 components/bootloader/*
