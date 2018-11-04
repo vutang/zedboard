@@ -81,7 +81,7 @@ void main_loop(void)
 	s = bootdelay_process();
 	if (cli_process_fdt(&s))
 		cli_secure_boot_cmd(s);
-
+	printf("Call autoboot_command\n");
 	autoboot_command(s);
 
 	cli_loop();
