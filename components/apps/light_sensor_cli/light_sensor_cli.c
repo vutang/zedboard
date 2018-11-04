@@ -2,7 +2,7 @@
 * @Author: vutt6
 * @Date:   2018-10-10 17:05:30
 * @Last Modified by:   vutang
-* @Last Modified time: 2018-10-20 15:43:13
+* @Last Modified time: 2018-11-01 10:18:05
 */
 #include <stdio.h>
 #include <pthread.h>
@@ -136,8 +136,10 @@ void *hw_mon(void *p) {
 			ghw_sensor_dat.si1152_uv = -1;
 
 		/*Tsl2591*/
-		ret1 = tsl2591_dev_read_byte(C0DATAL, &buf[0]);
-		ret2 = tsl2591_dev_read_byte(C0DATAH, &buf[1]);
+		ret1 = tsl2591_dev_read_byte(TSL2591_COMMAND_BIT | TSL2591_REGISTER_CHAN0_LOW, \
+			&buf[0]);
+		ret2 = tsl2591_dev_read_byte(TSL2591_COMMAND_BIT | TSL2591_REGISTER_CHAN0_HIGH,\
+			&buf[1]);
 		if ((ret1 == 0) && (ret2 == 0)) {
 			LOG_DEBUG("Read als0 tsl2591: LSB 0x%02x, MSB 0x%02x", buf[0], buf[1]);
 			ghw_sensor_dat.tsl2591_als0 = (short) (buf[1] * 256 + buf[0]);
@@ -145,8 +147,10 @@ void *hw_mon(void *p) {
 		else
 			ghw_sensor_dat.tsl2591_als0 = -1;
 
-		ret1 = tsl2591_dev_read_byte(C1DATAL, &buf[0]);
-		ret2 = tsl2591_dev_read_byte(C1DATAH, &buf[1]);
+		ret1 = tsl2591_dev_read_byte(TSL2591_COMMAND_BIT | TSL2591_REGISTER_CHAN1_LOW, \
+			&buf[0]);
+		ret2 = tsl2591_dev_read_byte(TSL2591_COMMAND_BIT | TSL2591_REGISTER_CHAN1_HIGH, \
+			&buf[1]);
 		if ((ret1 == 0) && (ret2 == 0)) {
 			LOG_DEBUG("Read als1 tsl2591: LSB 0x%02x, MSB 0x%02x", buf[0], buf[1]);
 			ghw_sensor_dat.tsl2591_als1 = (short) (buf[1] * 256 + buf[0]);
@@ -260,8 +264,14 @@ void get_args(int argc, char **argv) {
 }
 
 void init_hw(void) {
+	int ret;
 	/*Initialize hw to use*/
-	/*Do nothing by now - fix me*/
+	LOG_INFO("Setup Tsl2591");
+	ret = tsl2591_enable();
+	if (ret < 0)
+		LOG_WARN("Setup tsl2591 fail");
+
+	/*Do nothing for si by now - fix me*/
 	return;
 }
 
@@ -295,11 +305,11 @@ int main(int argc, char **argv) {
 		LOG_ERROR("Open tsl2591 dev fail");
 	} 
 
+	init_hw();
+
 	LOG_INFO("Open timer thread");
 	open_timer_thd();
 	open_hw_mon();
-
-	init_hw();
 
 	LOG_INFO("Init timer");
 	init_timer();

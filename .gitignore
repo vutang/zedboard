@@ -4,6 +4,7 @@ subsystems
 .petalinux/*
 !.petalinux/metadata
 *.o
+!bootgen/bin/unwrapped/lnx64.o
 *.jou
 *.log
 hw-description
