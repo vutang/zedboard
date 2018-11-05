@@ -4,6 +4,7 @@
  *
  * SPDX-License-Identifier:	GPL-2.0+
  */
+#define DEBUG
 
 #ifndef USE_HOSTCC
 #include <common.h>
@@ -88,6 +89,7 @@ static int bootm_find_os(cmd_tbl_t *cmdtp, int flag, int argc,
 	int ret;
 
 	/* get kernel image header, start address and length */
+	debug("[vux] bootm_find_os - boot_get_kernel");
 	os_hdr = boot_get_kernel(cmdtp, flag, argc, argv,
 			&images, &images.os.image_start, &images.os.image_len);
 	if (images.os.image_len == 0) {
@@ -580,6 +582,7 @@ static void fixup_silent_linux(void)
 int do_bootm_states(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[],
 		    int states, bootm_headers_t *images, int boot_progress)
 {
+	debug("%s: [vux] do_bootm_states\n", __FILE__);
 	boot_os_fn *boot_fn;
 	ulong iflag = 0;
 	int ret = 0, need_boot_fn;
@@ -590,13 +593,18 @@ int do_bootm_states(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[],
 	 * Work through the states and see how far we get. We stop on
 	 * any error.
 	 */
-	if (states & BOOTM_STATE_START)
+	if (states & BOOTM_STATE_START) {
+		debug("%s: [vux] do_bootm_states call bootm_start\n", __FILE__);
 		ret = bootm_start(cmdtp, flag, argc, argv);
+	}
 
-	if (!ret && (states & BOOTM_STATE_FINDOS))
+	if (!ret && (states & BOOTM_STATE_FINDOS)) {
+		debug("%s: [vux] do_bootm_states call bootm_find_os\n", __FILE__);
 		ret = bootm_find_os(cmdtp, flag, argc, argv);
+	}
 
 	if (!ret && (states & BOOTM_STATE_FINDOTHER)) {
+		debug("%s: [vux] do_bootm_states call bootm_find_other\n", __FILE__);
 		ret = bootm_find_other(cmdtp, flag, argc, argv);
 		argc = 0;	/* consume the args */
 	}
@@ -780,7 +788,7 @@ static const void *boot_get_kernel(cmd_tbl_t *cmdtp, int flag, int argc,
 #if defined(CONFIG_FIT)
 	int		os_noffset;
 #endif
-
+	debug("[vux] - boot_get_kernel: addr %s\n", argv[0]);
 	img_addr = genimg_get_kernel_addr_fit(argc < 1 ? NULL : argv[0],
 					      &fit_uname_config,
 					      &fit_uname_kernel);
