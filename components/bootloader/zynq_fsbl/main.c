@@ -577,7 +577,7 @@ int main(void)
 /******************************************************************************/
 /**
 *
-* This function reset the CPU and goes for Boot ROM fallback handling
+* [vux] This function reset the CPU and goes for Boot ROM fallback handling
 *
 * @param	None
 *
