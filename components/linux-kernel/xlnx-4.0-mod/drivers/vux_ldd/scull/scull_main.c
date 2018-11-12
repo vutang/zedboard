@@ -7,10 +7,10 @@ int scull_major =   0;
 int scull_minor =   0;
 int scull_nr_devs = 4;	/* number of bare scull devices */
 
-struct cdev scull_cdev;	  /* Char device structure		*/
+struct cdev scull_cdev[4];	  /* Char device structure		*/
 
 int scull_open(struct inode *inode, struct file *filp) {
-	printk("skull_open\n");
+	printk("skull_open <%d, %d>\n", MAJOR(inode->i_cdev->dev), MINOR(inode->i_cdev->dev));
 	return 0;
 }
 
@@ -64,13 +64,15 @@ int scull_init_module(void) {
 		return result;
 	}
 
-	dev_t devno = MKDEV(scull_major, 0);
-
-	cdev_init(&scull_cdev, &scull_fops);
-	err = cdev_add (&scull_cdev, devno, 1);
-	/* Fail gracefully if need be */
-	if (err)
-		printk(KERN_NOTICE "Error %d adding scull", err);
+	dev_t devno;
+	for (i = 0; i < scull_nr_devs; i++) {
+		devno = MKDEV(scull_major, i);
+		cdev_init(&scull_cdev[i], &scull_fops);
+		err = cdev_add(&scull_cdev[i], devno, 1);
+		/* Fail gracefully if need be */
+		if (err)
+			printk(KERN_NOTICE "Error %d adding scull", err);
+	}
 	return 0;
 }
 
