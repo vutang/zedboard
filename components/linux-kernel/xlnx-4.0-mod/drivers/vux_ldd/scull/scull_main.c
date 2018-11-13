@@ -1,3 +1,9 @@
+/*
+* @Author: Vu Tang
+* @Date:   2018-11-13 22:20:13
+* @Last Modified by:   Vu Tang
+* @Last Modified time: 2018-11-13 22:58:15
+*/
 #include <linux/kernel.h>
 #include <linux/module.h>
 #include <linux/fs.h>		/* everything... */
@@ -6,14 +12,25 @@
 #include <linux/of_device.h>
 #include <linux/of_platform.h>
 
-
 #define DRIVER_NAME "plcore"
+#define PLCORE_ID_TIMER 0
 
 int plcore_major =   0;
 int plcore_minor =   0;
 int plcore_nr_devs = 4;	/* number of bare plcore devices */
 
-struct cdev plcore_cdev[4];	  /* Char device structure		*/
+/*Struct to hold private info for driver*/
+struct plcore_priv {
+	/*Hold device file info*/
+	struct cdev cdev_;
+	
+	/*Memory*/
+	void __iomem *base;
+
+	/*Interrupt*/
+	int irq;
+	int (*irq_handler)();
+};
 
 /*File Operations*/
 int plcore_open(struct inode *inode, struct file *filp) {
@@ -47,9 +64,23 @@ struct file_operations plcore_fops = {
 	.release =  plcore_release,
 };
 
-/*Driver operations*/
+/*Driver operations
+	struct platform_device is defined in platform_device.h
+*/
 static int plcore_probe(struct platform_device *pdev) {
-	printk("plcore probe\n");
+	struct of_device_id *of_dev_id;
+	/*of_match_device is defined in of/device.c, use to find of_device in of_device_id table
+	that is probing*/
+	of_dev_id = of_match_device(plcore_of_match, pdev->dev);
+	if (of_dev_id == NULL) {
+		dev_err(pdev->dev, "of_device_id fail");
+		return -1;
+	}
+	dev_info(pdev->dev, "probing plcore id = %d (%s)\n", (int) of_dev_id->data, \
+		of_dev_id->compatible);
+
+	/*Time to create Device File*/
+	// Create Device Here
 	return 0;
 }
 
@@ -58,9 +89,11 @@ static int plcore_remove(struct platform_device *pdev) {
 	return 0;
 }
 
-/*Driver Match*/
+/*Driver Match
+	struct of_device_id is defined in linux/mod_devicetable.h
+*/
 static struct of_device_id plcore_of_match[] = {
-	{ .compatible = "xlnx,ZedboardOLED-1.0", },
+	{ .compatible = "xlnx,ZedboardOLED-1.0", .data = PLCORE_ID_TIMER},
 	{ /* end of list */ },
 };
 
