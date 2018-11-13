@@ -1,0 +1,20 @@
+/dts-v1/;
+/include/ "system-conf.dtsi"
+/ {
+};
+
+&qspi {
+	flash0: flash@0 {
+		compatible = "micron,n25q128a13";
+	};
+};
+
+&i2c0 {
+	clock-frequency = <100000>;
+    status = "okay";
+};
+
+&i2c1 {
+	clock-frequency = <100000>;
+    status = "okay";
+};
